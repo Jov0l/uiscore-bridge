@@ -1,3 +1,5 @@
+![Uiscore Bridge](docs/cover.jpg)
+
 # Uiscore Bridge
 
 **Figma → After Effects, layer by layer.** Native shapes, editable gradients, no raster surprises.

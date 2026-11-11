@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- SOURCE of figma-plugin/ui.html. scripts/build.js inlines the asset placeholders from figma-plugin/assets/ as data URIs. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Core DS tokens (names follow the Figma variables, including the DS spelling "backround" / "transparrent") */
+  :root {
+    --backround-default-bg: #ffffff;
+    --backround-default-bg-hover: #f4f4f5;
+    --backround-default-bg-pressed: #e4e4e7;
+    --backround-field-field: #ffffff;
+    --backround-item-item-hover: #e4e4e7;
+    --border-default-border-default: #e4e4e7;
+    --text-default-txt-default: #09090b;
+    --text-default-txt-subtle: #52525c;
+    --text-default-txt-muted: #71717b;
+    --text-inverted-txt-default: #ffffff;
+    --text-error-text-default: #ff3347;
+    --text-success-text-default: #32b332;
+    --icon-default-icon-muted: #71717b;
+    --icon-error-icon-default: #ff3347;
+    --icon-success-icon-default: #32b332;
+    --icon-info-icon-default: #2489ff;
+    --button-neutral-button: #ffffff;
+    --button-neutral-button-hover: #f4f4f5;
+    --button-transparrent-button: rgba(255, 255, 255, 0);
+    --spacing-0: 0px; --spacing-2: 2px; --spacing-4: 4px; --spacing-6: 6px; --spacing-8: 8px;
+    --spacing-10: 10px; --spacing-12: 12px; --spacing-24: 24px;
+    --radius-0: 0px; --radius-4: 4px; --radius-6: 6px; --radius-8: 8px; --radius-full: 999px;
+    --backround-error-bg-soft: #fff1f2;
+    --border-error-border-soft: #ffc5cb;
+    --font-family-body: "Plus Jakarta Sans", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-size-small: 12px; --font-size-medium: 14px; --font-size-large: 16px;
+    --font-weight-400: 400; --font-weight-500: 500;
+    /* effect styles */
+    --light-theme-box-box-xsmall: 0 0 0 1px rgba(0,0,0,.08), 0 1px 2px -1px rgba(0,0,0,.08), 0 2px 4px 0 rgba(0,0,0,.04);
+    --light-theme-button-button-neutral: 0 1px 2px 0 rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.08);
+    --light-theme-box-box-large: 0 0 0 1px rgba(0,0,0,.08), 0 4px 8px 0 rgba(0,0,0,.08), 0 8px 16px 0 rgba(0,0,0,.08);
+    /* theme-neutral aliases used by the components (light values) */
+    --ub-box-xsmall: var(--light-theme-box-box-xsmall);
+    --ub-button-neutral: var(--light-theme-button-button-neutral);
+    --ub-box-large: var(--light-theme-box-box-large);
+    --ub-preview-canvas: var(--backround-default-bg-pressed);
+    --ub-press-overlay: rgba(9,9,11,.06);
+    --ub-ease: cubic-bezier(.2,.7,.3,1); /* ease-out */
+    color-scheme: light;
+  }
+  /* Dark theme = Figma "uiscore bridge - dark" (node 2887:1001). Figma sets html.figma-dark / html.figma-light
+     (showUI themeColors: true); outside Figma we follow prefers-color-scheme unless .figma-light is set. */
+  html.figma-dark {
+    --backround-default-bg: #18181b;
+    --backround-default-bg-hover: #27272a;
+    --backround-default-bg-pressed: #3f3f46;
+    --backround-field-field: rgba(255, 255, 255, 0.04);
+    --backround-item-item-hover: #27272a;
+    --border-default-border-default: rgba(255, 255, 255, 0.1);
+    --text-default-txt-default: #f4f4f5;
+    --text-default-txt-subtle: #9f9fa9;
+    --text-default-txt-muted: #71717b;
+    --text-inverted-txt-default: #09090b;
+    --button-neutral-button: rgba(255, 255, 255, 0.04);
+    --button-neutral-button-hover: rgba(255, 255, 255, 0.08);
+    --backround-error-bg-soft: #4b040b;
+    --border-error-border-soft: #a50f1e;
+    --dark-theme-box-box-xsmall: 0 -1px 0 0 rgba(255,255,255,.06), 0 0 0 1px rgba(255,255,255,.04), 0 0 0 1px #27272a, 0 0 1px 1.5px rgba(0,0,0,.24), 0 2px 2px 0 rgba(0,0,0,.28);
+    --dark-theme-button-button-neutral: 0 -1px 0 0 rgba(255,255,255,.06), 0 0 0 1px rgba(255,255,255,.04), 0 0 0 1px #27272a, 0 0 1px 1.5px rgba(0,0,0,.24), 0 2px 4px 0 rgba(0,0,0,.32);
+    --dark-theme-box-box-large: 0 -1px 0 0 rgba(255,255,255,.06), 0 0 0 1px rgba(255,255,255,.04), 0 0 0 1px #27272a, 0 8px 16px 0 rgba(0,0,0,.32);
+    --ub-box-xsmall: var(--dark-theme-box-box-xsmall);
+    --ub-button-neutral: var(--dark-theme-button-button-neutral);
+    --ub-box-large: var(--dark-theme-box-box-large);
+    --ub-preview-canvas: #3f3f46;
+    --ub-press-overlay: rgba(255,255,255,.06);
+    color-scheme: dark;
+  }
+  /*@@DARK_MEDIA@@*/
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--font-family-body); color: var(--text-default-txt-default); background: var(--backround-default-bg-hover);
+         -webkit-font-smoothing: antialiased; overflow: hidden; }
+  button, select { font: inherit; color: inherit; }
+  img { display: block; }
+  .dark-only { display: none !important; }
+  html.figma-dark .dark-only { display: block !important; }
+  html.figma-dark .light-only { display: none !important; }
+  /*@@DARK_MEDIA_ASSETS@@*/
+  /* text styles */
+  .txt-compact-large-plus { font-size: var(--font-size-large); font-weight: var(--font-weight-500); line-height: 20px; }
+  .txt-compact-medium-plus { font-size: var(--font-size-medium); font-weight: var(--font-weight-500); line-height: 20px; }
+  .txt-compact-medium { font-size: var(--font-size-medium); font-weight: var(--font-weight-400); line-height: 20px; }
+  .txt-compact-small-plus { font-size: var(--font-size-small); font-weight: var(--font-weight-500); line-height: 20px; }
+  .txt-medium { font-size: var(--font-size-medium); font-weight: var(--font-weight-400); line-height: 1.6; }
+  .txt-small { font-size: var(--font-size-small); font-weight: var(--font-weight-400); line-height: 1.6; }
+
+  /* the plugin window IS the card; the harness adds .preview to show the card's radius + shadow like Figma */
+  #app { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; background: var(--backround-default-bg-hover); }
+  html.preview body { background: var(--ub-preview-canvas); padding: 2px 4px; height: auto; } /* matches the Figma export framing */
+  html.preview.figma-dark body { padding: 3px; } /* the dark Figma export frames the card 3px from the top-left */
+  html.preview #app { border-radius: 12px; box-shadow: var(--ub-box-xsmall); }
+  html.preview #app { width: var(--ub-w, 460px); height: var(--ub-h, 460px); } /* set from SIZES by setLayout() */
+
+  /* visibility per state */
+  .only-result, .only-main, .only-retry, .only-loading { display: none !important; }
+  #app[data-state="waiting"] .only-result, #app[data-state="success"] .only-result, #app[data-state="error"] .only-result { display: flex !important; }
+  #app[data-state="success"] .only-retry, #app[data-state="error"] .only-retry { display: flex !important; }
+  #app[data-state="ready"] .only-main, #app[data-state="exporting"] .only-main { display: flex !important; }
+  #app[data-state="exporting"] .only-loading { display: flex !important; }
+  #app[data-state="exporting"] #thumb { display: none; }
+
+  /* Waiting / Done / Error */
+  .result { flex: 1 0 0; min-height: 1px; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; overflow: hidden;
+            background: var(--backround-default-bg); border-bottom: 1px solid var(--border-default-border-default); }
+  .content-icon { position: relative; width: 32px; height: 32px; border-radius: var(--radius-full); overflow: hidden; flex-shrink: 0; }
+  .content-icon img { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .result-text { display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: center; }
+  .result-text .title { color: var(--text-default-txt-default); }
+  #app[data-state="waiting"] .result { padding: 24px; }
+  .result-text .desc { color: var(--text-default-txt-subtle); overflow-wrap: anywhere; max-height: 9.6em; overflow: hidden; }
+  #app[data-alert="1"] .result-text .desc { max-height: 6.4em; }
+  #app[data-state="error"] .result-text .title { color: var(--text-error-text-default); }
+  .retry { flex-direction: column; padding: 16px; background: var(--backround-default-bg); border-bottom: 1px solid var(--border-default-border-default); flex-shrink: 0; }
+
+  /* Header */
+  .head { align-items: center; gap: 12px; padding: 16px 24px; background: var(--backround-default-bg); border-bottom: 1px solid var(--border-default-border-default); flex-shrink: 0; }
+  .frame-name { flex: 1 0 0; min-width: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-default-txt-default); }
+  .btn-ghost { display: flex; align-items: center; justify-content: center; gap: var(--spacing-6); padding: var(--spacing-6) var(--spacing-10); border: 0;
+               border-radius: var(--radius-6); background: var(--button-transparrent-button); color: var(--text-default-txt-subtle); cursor: pointer; white-space: nowrap; }
+  .btn-ghost:hover { background: var(--backround-default-bg-hover); }
+  .btn-ghost:active { background: var(--backround-default-bg-pressed); }
+
+  /* Preview stage */
+  .stage { flex-direction: column; height: 323px; padding: 40px; background: var(--backround-default-bg-hover); border-bottom: 1px solid var(--border-default-border-default); flex-shrink: 0; }
+  .preview-card { position: relative; flex: 1 0 0; min-height: 1px; width: 100%; border-radius: 8px; overflow: hidden; background: var(--backround-default-bg); box-shadow: var(--ub-box-xsmall);
+                  display: flex; align-items: center; justify-content: center; }
+  #thumb { max-width: calc(100% - 32px); max-height: calc(100% - 32px); object-fit: contain; }
+  #thumb[src=""] , #thumb:not([src]) { display: none; }
+  .loading { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 278px; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-12); padding: var(--spacing-24); }
+  .loading-row { display: flex; align-items: center; justify-content: center; gap: var(--spacing-6); width: 100%; }
+  .loading-row img.spin { animation: ub-spin 0.9s linear infinite; }
+  .loading .title { color: var(--text-default-txt-default); white-space: nowrap; }
+  .loading .desc { color: var(--text-default-txt-subtle); text-align: center; width: 100%; margin: 0; }
+  @keyframes ub-spin { to { transform: rotate(360deg); } }
+  html.still .loading-row img { animation: none; }
+
+  /* Fields + buttons */
+  .actions { align-items: flex-start; gap: 12px; padding: 24px; background: var(--backround-default-bg); border-bottom: 1px solid var(--border-default-border-default); flex-shrink: 0; }
+  .field { position: relative; display: flex; align-items: center; justify-content: center; gap: var(--spacing-8); padding: var(--spacing-6) var(--spacing-8);
+           border-radius: var(--radius-6); background: var(--backround-field-field); box-shadow: var(--ub-box-xsmall); flex-shrink: 0; }
+  .field .value { flex: 1 0 0; min-width: 1px; color: var(--text-default-txt-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .field .chev { padding: var(--spacing-2); flex-shrink: 0; }
+  .field { cursor: pointer; outline: none; }
+  .field select { display: none; } /* data model only; the DS dropdown menu below is the UI */
+  .field:hover { background: var(--backround-default-bg-hover); }
+  .field:focus-visible { box-shadow: var(--ub-box-xsmall), 0 0 0 2px rgba(36,137,255,.35); }
+  .field.scale { width: 85px; }
+  .field.wide { width: 100%; }
+  .btn-neutral { display: flex; align-items: center; justify-content: center; gap: var(--spacing-6); padding: var(--spacing-6) var(--spacing-10); border: 0; border-radius: var(--radius-6);
+                 background: var(--button-neutral-button); box-shadow: var(--ub-button-neutral); color: var(--text-default-txt-default); cursor: pointer; white-space: nowrap; }
+  .btn-neutral:hover { background: var(--button-neutral-button-hover); }
+  .btn-neutral:active { background: var(--backround-default-bg-pressed); }
+  .btn-neutral[aria-disabled="true"] { cursor: progress; }
+  #send { flex: 1 0 0; min-width: 1px; }
+  #retry { width: 100%; }
+
+  .options { align-items: flex-start; border-bottom: 1px solid var(--border-default-border-default); flex-shrink: 0; }
+  .opt { flex: 1 0 0; min-width: 1px; display: flex; flex-direction: column; gap: 12px; padding: 24px; background: var(--backround-default-bg); }
+  .opt + .opt { border-left: 1px solid var(--border-default-border-default); }
+  .opt .label { color: var(--text-default-txt-subtle); }
+
+  /* Dropdown Menu (DS "Dropdown Menu", box-large) */
+  .menu { display: none; position: absolute; z-index: 6; flex-direction: column; gap: var(--spacing-2); padding: var(--spacing-4); border-radius: var(--radius-8);
+          background: var(--backround-default-bg); box-shadow: var(--ub-box-large); outline: none; }
+  .menu.open { display: flex; }
+  .menu-item { display: flex; align-items: center; justify-content: center; gap: var(--spacing-8); padding: var(--spacing-6) var(--spacing-8); border-radius: var(--radius-6);
+               background: var(--backround-default-bg); color: var(--text-default-txt-default); cursor: pointer; white-space: nowrap; }
+  .menu-item .txt { flex: 1 0 0; min-width: 1px; overflow: hidden; text-overflow: ellipsis; }
+  .menu-item .check { display: flex; padding: var(--spacing-2); flex-shrink: 0; }
+  .menu-item:not([aria-selected="true"]) .check { display: none; }
+  .menu-item.active { background: var(--backround-default-bg-hover); }
+
+  /* Connection alert (DS Alert: Error / Colored / Extended, no actions) */
+  .alert-wrap { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: var(--backround-default-bg);
+                border-bottom: 1px solid var(--border-default-border-default); flex-shrink: 0; }
+  #app[data-alert="1"] .alert-wrap { display: flex; }
+  .alert { display: flex; align-items: flex-start; gap: var(--spacing-12); width: 100%; padding: var(--spacing-12); overflow: hidden; border-radius: var(--radius-8);
+           background: var(--backround-error-bg-soft); border: 1px solid var(--border-error-border-soft); }
+  .alert { padding-bottom: 9px; } /* Figma renders this alert 3px shorter than 12px padding + 2 x 22.4px lines; matched to the design */
+  .alert .info { display: flex; padding: var(--spacing-2); flex-shrink: 0; }
+  .alert .content { flex: 1 0 0; min-width: 1px; display: flex; flex-direction: column; gap: var(--spacing-4); }
+  .alert .a-title { color: var(--text-default-txt-default); }
+  .alert .a-desc { color: var(--text-default-txt-subtle); margin: 0; }
+  .alert .close { display: flex; align-items: center; justify-content: center; padding: var(--spacing-2); border: 0; border-radius: var(--radius-4);
+                  background: var(--button-transparrent-button); cursor: pointer; flex-shrink: 0; }
+  .alert .close:hover { background: var(--ub-press-overlay); }
+
+  /* ---- Motion: 120-240ms ease-out; everything is switched off in html.still (screenshots) and trimmed for prefers-reduced-motion */
+  .btn-neutral, .btn-ghost, .field, .badge, .alert .close, .menu-item {
+    transition: background-color 160ms var(--ub-ease), box-shadow 160ms var(--ub-ease), transform 120ms var(--ub-ease), opacity 160ms var(--ub-ease); }
+  .btn-neutral:active, .btn-ghost:active, .field:active { transform: scale(0.98); }
+  .badge:hover { opacity: 0.85; }
+  .badge:active, .alert .close:active { transform: scale(0.94); }
+  .btn-neutral[aria-disabled="true"] { opacity: 0.7; transform: none; }
+  /* menu: fade + 4px slide (from above, or from below when flipped up) */
+  .menu { display: flex; visibility: hidden; opacity: 0; transform: translateY(-4px); pointer-events: none;
+          transition: opacity 140ms var(--ub-ease), transform 160ms var(--ub-ease), visibility 0s linear 160ms; }
+  .menu.up { transform: translateY(4px); }
+  .menu.open { visibility: visible; opacity: 1; transform: none; pointer-events: auto; transition-delay: 0s; }
+  /* alert: grows (height + fade) after the window has grown; collapses before the window shrinks */
+  .alert-wrap { max-height: 220px; }
+  #app[data-alert="1"] .alert-wrap { animation: ub-alert-in 220ms var(--ub-ease) both; }
+  #app.alert-leaving .alert-wrap { animation: ub-alert-out 180ms var(--ub-ease) both; }
+  @keyframes ub-alert-in { from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; } }
+  @keyframes ub-alert-out { to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; } }
+  /* attention when the red badge is clicked again while AE is still offline */
+  .alert { outline: 2px solid transparent; outline-offset: 2px; transition: outline-color 200ms var(--ub-ease); }
+  .alert:focus { outline: none; }
+  .alert.attention { outline-color: var(--icon-error-icon-default); animation: ub-shake 360ms var(--ub-ease); }
+  @keyframes ub-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+  /* screen change: the window resize is instant (figma.ui.resize), so the new content fades/slides in */
+  #app.swap .result, #app.swap .retry, #app.swap .head, #app.swap .stage, #app.swap .actions, #app.swap .options { animation: ub-swap-in 200ms var(--ub-ease) both; }
+  @keyframes ub-swap-in { from { opacity: 0; transform: translateY(4px); } }
+  /* badge: pulsing dot while a connection check runs */
+  .badge.checking .pt::after { animation: ub-pulse 700ms ease-in-out infinite; }
+  .badge.checking .t { opacity: 0.7; }
+  @keyframes ub-pulse { 50% { transform: scale(0.55); opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-neutral, .btn-ghost, .field, .badge, .alert .close, .menu-item, .menu, .alert { transition-duration: 0s !important; }
+    .btn-neutral:active, .btn-ghost:active, .field:active, .badge:active, .alert .close:active, .menu, .menu.up { transform: none; }
+    #app[data-alert="1"] .alert-wrap, #app.alert-leaving .alert-wrap, #app.swap * { animation: none !important; }
+    .alert.attention { animation: none; } /* highlight only, no shake */
+    .badge.checking .pt::after { animation: none; opacity: 0.45; }
+  }
+  html.still *, html.still *::before, html.still *::after { transition: none !important; animation: none !important; }
+
+  /* Footer */
+  .foot { display: flex; align-items: center; gap: 4px; padding: 24px; background: var(--backround-default-bg-hover); flex-shrink: 0; margin-top: auto; }
+  .logo { padding: 2px; flex-shrink: 0; }
+  .version { flex: 1 0 0; min-width: 1px; color: var(--text-default-txt-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default; user-select: none; }
+  .badge { display: flex; align-items: center; justify-content: center; gap: var(--spacing-2); padding: 0 var(--spacing-4) 0 var(--spacing-2); border: 0; border-radius: var(--radius-full);
+           background: transparent; cursor: pointer; white-space: nowrap; }
+  .badge .pt { position: relative; width: 16px; height: 16px; flex-shrink: 0; }
+  .badge .pt::after { content: ""; position: absolute; left: 4px; top: 4px; width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--icon-error-icon-default); }
+  .badge .t { color: var(--text-error-text-default); }
+  .badge.on .pt::after { background: var(--icon-success-icon-default); }
+  .badge.on .t { color: var(--text-success-text-default); }
+
+  #app { position: relative; }
+</style>
+</head>
+<body>
+<div id="app" data-state="waiting" data-size="waiting" data-alert="0">
+  <!-- Waiting / Done / Error -->
+  <section class="result only-result">
+    <div class="content-icon"><img id="resultIcon" width="20" height="20" alt="" src="{{asset:select-frame.svg}}"></div>
+    <div class="result-text">
+      <div id="resultTitle" class="title txt-compact-medium-plus">Choose Frame or Layer</div>
+      <div id="resultDesc" class="desc txt-medium">To begin transferring, select at least one layer or frame.</div>
+    </div>
+  </section>
+  <section class="retry only-retry">
+    <button id="retry" class="btn-neutral txt-compact-medium-plus" type="button">Try again</button>
+  </section>
+
+  <!-- Ready / Exporting -->
+  <header class="head only-main">
+    <div id="frameName" class="frame-name txt-compact-large-plus">Frame Name</div>
+    <button id="mark" class="btn-ghost txt-compact-medium-plus" type="button" title="Toggle a leading * on the selected layers: they are exported to After Effects as PNG">
+      <img width="16" height="16" alt="" src="{{asset:raster-image.svg}}">Mark as raster (*)
+    </button>
+  </header>
+  <section class="stage only-main">
+    <div class="preview-card">
+      <img id="thumb" alt="">
+      <div class="loading only-loading">
+        <div class="loading-row"><img class="spin light-only" width="20" height="20" alt="" src="{{asset:loading.svg}}"><img class="spin dark-only" width="20" height="20" alt="" src="{{asset:loading-dark.svg}}"><span class="title txt-compact-medium-plus">Exporting...</span></div>
+        <p class="desc txt-small">This operation is currently in progress. Please wait a moment.</p>
+      </div>
+    </div>
+  </section>
+  <section class="actions only-main">
+    <div class="field scale" data-for="cap" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Raster export scale cap" title="Raster export scale cap">
+      <span id="capValue" class="value txt-compact-medium">3x</span>
+      <span class="chev"><img width="16" height="16" alt="" src="{{asset:chevron-down.svg}}"></span>
+      <select id="cap" aria-hidden="true" tabindex="-1"><option value="1">1x</option><option value="2">2x</option><option value="3" selected>3x</option><option value="4">4x</option></select>
+    </div>
+    <button id="send" class="btn-neutral txt-compact-medium-plus" type="button">Export in After Effects<img width="16" height="16" alt="" src="{{asset:ae-badge.svg}}"></button>
+  </section>
+  <section class="options only-main">
+    <div class="opt">
+      <div class="label txt-compact-medium-plus">Group as</div>
+      <div class="field wide" data-for="groupsAs" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Group as">
+        <span id="groupsAsValue" class="value txt-compact-medium">Precomps</span>
+        <span class="chev"><img width="16" height="16" alt="" src="{{asset:chevron-down.svg}}"></span>
+        <select id="groupsAs" aria-hidden="true" tabindex="-1"><option value="precomp">Precomps</option><option value="parent">Parented nulls</option></select>
+      </div>
+    </div>
+    <div class="opt">
+      <div class="label txt-compact-medium-plus">Target</div>
+      <div class="field wide" data-for="compMode" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Target">
+        <span id="compModeValue" class="value txt-compact-medium">New comp per frame</span>
+        <span class="chev"><img width="16" height="16" alt="" src="{{asset:chevron-down.svg}}"></span>
+        <select id="compMode" aria-hidden="true" tabindex="-1"><option value="new">New comp per frame</option><option value="active">Into active comp</option></select>
+      </div>
+    </div>
+  </section>
+
+  <!-- shown while AE is unreachable (after the first failed /ping) until closed; comes back on the next disconnect -->
+  <section class="alert-wrap">
+    <div id="alert" class="alert" role="alert" aria-live="assertive" tabindex="-1">
+      <span class="info"><img width="16" height="16" alt="" src="{{asset:alert-error.svg}}"></span>
+      <div class="content">
+        <div class="a-title txt-compact-medium-plus">No bridge on port 7341.</div>
+        <p class="a-desc txt-medium">Open Window &gt; Extensions &gt; Uiscore Bridge in After Effects.</p>
+      </div>
+      <button id="alertClose" class="close" type="button" title="Hide" aria-label="Hide"><img width="16" height="16" alt="" src="{{asset:crossmark.svg}}"></button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span class="logo"><img width="16" height="16" alt="Uiscore" src="{{asset:app-icon.svg}}"></span>
+    <span id="version" class="version txt-compact-small-plus">Uiscore Bridge - v{{version}}</span>
+    <button id="status" class="badge" type="button" title="Check the connection to After Effects"><span class="pt"></span><span id="statusText" class="t txt-compact-small-plus">AE Disconnected</span></button>
+  </footer>
+  <div id="menu" class="menu txt-compact-medium-plus" role="listbox" tabindex="-1"></div>
+</div>
+<script>
+  var PORT = 7341;
+  var HOSTS = ["http://localhost:" + PORT];
+  var base = HOSTS[0];
+  // Window sizes from the Figma design (node 2686:126894); "+alert" = the "No bridge on port" alert is visible.
+  var SIZES = { waiting: [460, 460], "waiting+alert": [460, 650], full: [469, 650], "full+alert": [469, 791], result: [460, 469], "result+alert": [460, 469] };
+  var CHECK = "{{asset:checkmark.svg}}";
+  var ICONS = { waiting: "{{asset:select-frame.svg}}", success: "{{asset:success-check.svg}}", error: "{{asset:error-alert.svg}}" };
+  var TEXT = {
+    waiting: ["Choose Frame or Layer", "To begin transferring, select at least one layer or frame."],
+    success: ["Done!", "Select the layer again or start exporting again by clicking the button."],
+    error: ["Export failed", ""]
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var app = $("app");
+  var ui = { state: "waiting", connected: false, pinged: false, alertClosed: false, selection: { count: 0, names: [] }, lastSize: "",
+             checking: false, manualPending: false, lastManual: -1e9, throttleMs: 3000, trailing: 0, alertShown: false, leaveTimer: 0 };
+  var reduceMotion = function () { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) || document.documentElement.classList.contains("still"); };
+  function restartClass(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+  function post(msg) { parent.postMessage({ pluginMessage: msg }, "*"); }
+
+  // Diagnostics go to the console only; connection errors are shown by the alert.
+  function log(text) { if (window.console) console.log("[Uiscore Bridge] " + text); }
+
+  function setState(state, detail) {
+    if (state !== ui.state) restartClass(app, "swap");
+    ui.state = state;
+    app.setAttribute("data-state", state);
+    if (TEXT[state]) {
+      $("resultIcon").src = ICONS[state];
+      $("resultTitle").textContent = TEXT[state][0];
+      $("resultDesc").textContent = state === "error" ? (detail || "Something went wrong.") : TEXT[state][1];
+    }
+    $("send").setAttribute("aria-disabled", state === "exporting" ? "true" : "false");
+    if (state !== "ready" && state !== "exporting") closeMenu();
+    setLayout();
+  }
+
+  // Picks the design size for the current state + alert and asks main.js to resize the window when it changes.
+  function setLayout() {
+    var alert = ui.pinged && !ui.connected && !ui.alertClosed;
+    var kind = ui.state === "waiting" ? "waiting" : (ui.state === "ready" || ui.state === "exporting") ? "full" : "result";
+    if (ui.leaveTimer && !alert && kind !== ui.leaveKind) { // the screen changed meanwhile: drop the alert at once
+      clearTimeout(ui.leaveTimer); ui.leaveTimer = 0; app.classList.remove("alert-leaving"); ui.alertShown = false;
+    }
+    if (ui.alertShown && !alert && !reduceMotion()) {
+      ui.leaveKind = kind;
+      // collapse the alert first, then shrink the window, so nothing jumps
+      if (!ui.leaveTimer) { app.classList.add("alert-leaving"); ui.leaveTimer = setTimeout(function () { ui.leaveTimer = 0; app.classList.remove("alert-leaving"); ui.alertShown = false; setLayout(); }, 180); }
+      alert = true;
+    } else {
+      if (ui.leaveTimer && alert) { clearTimeout(ui.leaveTimer); ui.leaveTimer = 0; app.classList.remove("alert-leaving"); }
+      if (!ui.leaveTimer) ui.alertShown = alert;
+      else alert = true;
+    }
+    app.setAttribute("data-alert", alert ? "1" : "0");
+    var size = kind + (alert ? "+alert" : "");
+    app.setAttribute("data-size", size);
+    app.style.setProperty("--ub-w", SIZES[size][0] + "px"); app.style.setProperty("--ub-h", SIZES[size][1] + "px");
+    if (size !== ui.lastSize) { ui.lastSize = size; closeMenu(); post({ type: "resize", width: SIZES[size][0], height: SIZES[size][1] }); }
+  }
+
+  function setConnected(on) {
+    if (on) ui.alertClosed = false; // the alert comes back on the next disconnect
+    ui.connected = on; ui.pinged = true;
+    setLayout();
+    $("status").classList.toggle("on", !!on);
+    $("statusText").textContent = on ? "Connected" : "AE Disconnected";
+  }
+
+  function renderSelection(sel) {
+    ui.selection = sel;
+    var name = sel.count ? sel.names[0] + (sel.count > 1 ? "  +" + (sel.count - 1) : "") : "Frame Name";
+    $("frameName").textContent = name;
+    $("frameName").title = sel.names ? sel.names.join(", ") : "";
+    if (sel.thumb) {
+      var url = URL.createObjectURL(new Blob([new Uint8Array(sel.thumb)], { type: "image/png" }));
+      var old = $("thumb").getAttribute("src");
+      $("thumb").src = url;
+      if (old && old.indexOf("blob:") === 0) URL.revokeObjectURL(old);
+    } else if (sel.thumb === null) {
+      $("thumb").removeAttribute("src");
+    }
+    if (ui.state === "exporting") return;
+    if (!sel.count) setState("waiting");
+    else if (ui.state === "waiting" || ui.state === "ready" || sel.changed) setState("ready");
+  }
+
+  async function ping() {
+    ui.checking = true;
+    try { return await pingHosts(); } finally { ui.checking = false; }
+  }
+  async function pingHosts() {
+    for (var i = 0; i < HOSTS.length; i++) {
+      try {
+        var ctrl = new AbortController(); var t = setTimeout(function () { ctrl.abort(); }, 1500);
+        var r = await fetch(HOSTS[i] + "/ping", { signal: ctrl.signal }); clearTimeout(t);
+        if (r.ok) { var j = await r.json(); base = HOSTS[i]; ui.manualPending = false; setConnected(true); $("status").title = "After Effects " + (j.host && j.host.version ? j.host.version : "") + " · " + base; return true; }
+      } catch (e) {}
+    }
+    if (ui.manualPending) ui.alertClosed = false; // a manual check that fails always brings the alert back
+    ui.manualPending = false;
+    setConnected(false); $("status").title = "No Uiscore Bridge panel on port " + PORT + ". Open Window > Extensions > Uiscore Bridge in After Effects.";
+    return false;
+  }
+
+  // ---- DS dropdown menu for the three option fields (the hidden <select> stays the source of truth)
+  var menu = { el: $("menu"), field: null, sel: null, active: -1 };
+  function openMenu(field) {
+    var sel = $(field.getAttribute("data-for")); closeMenu();
+    menu.field = field; menu.sel = sel; menu.active = sel.selectedIndex;
+    menu.el.innerHTML = "";
+    for (var i = 0; i < sel.options.length; i++) {
+      var it = document.createElement("div");
+      it.className = "menu-item"; it.setAttribute("role", "option"); it.setAttribute("data-i", i);
+      it.setAttribute("aria-selected", i === sel.selectedIndex ? "true" : "false");
+      it.innerHTML = '<span class="txt"></span><span class="check"><img width="16" height="16" alt="" src="' + CHECK + '"></span>';
+      it.firstChild.textContent = sel.options[i].text;
+      menu.el.appendChild(it);
+    }
+    // layout box relative to #app (offset*, so a running screen-change animation does not skew the position)
+    var x = 0, y = 0;
+    for (var el = field; el && el !== app; el = el.offsetParent) { x += el.offsetLeft; y += el.offsetTop; }
+    var fw = field.offsetWidth, fh = field.offsetHeight, ah = app.clientHeight;
+    menu.el.style.width = fw + "px"; menu.el.style.left = x + "px";
+    var h = menu.el.offsetHeight, top = y + fh + 6;
+    var up = top + h > ah - 4 && y - 6 - h >= 4; // flip up when it would leave the window
+    if (up) top = y - 6 - h;
+    menu.el.classList.toggle("up", up);
+    menu.el.style.top = top + "px";
+    menu.el.classList.add("open");
+    field.setAttribute("aria-expanded", "true");
+    highlight(menu.active);
+  }
+  function closeMenu() {
+    if (!menu.field) return;
+    menu.el.classList.remove("open"); menu.field.setAttribute("aria-expanded", "false");
+    menu.field = null; menu.sel = null;
+  }
+  function highlight(i) {
+    var items = menu.el.children; menu.active = Math.max(0, Math.min(items.length - 1, i));
+    for (var k = 0; k < items.length; k++) items[k].classList.toggle("active", k === menu.active);
+  }
+  function pick(i) {
+    var sel = menu.sel, field = menu.field; closeMenu();
+    if (!sel) return;
+    if (sel.selectedIndex !== i) { sel.selectedIndex = i; sel.dispatchEvent(new Event("change")); }
+    field.focus();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".field[data-for]"), function (field) {
+    field.addEventListener("click", function (e) { e.stopPropagation(); if (menu.field === field) closeMenu(); else openMenu(field); });
+    field.addEventListener("keydown", function (e) {
+      var open = menu.field === field;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (!open) openMenu(field); else highlight(menu.active + (e.key === "ArrowDown" ? 1 : -1)); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (open) pick(menu.active); else openMenu(field); }
+      else if (e.key === "Escape" || e.key === "Tab") { closeMenu(); }
+    });
+  });
+  menu.el.addEventListener("mousedown", function (e) { e.preventDefault(); });
+  menu.el.addEventListener("mousemove", function (e) { var it = e.target.closest(".menu-item"); if (it) highlight(Number(it.getAttribute("data-i"))); });
+  menu.el.addEventListener("click", function (e) { e.stopPropagation(); var it = e.target.closest(".menu-item"); if (it) pick(Number(it.getAttribute("data-i"))); });
+  document.addEventListener("click", closeMenu);
+  window.addEventListener("blur", closeMenu);
+
+  function syncField(id) { var s = $(id); $(id + "Value").textContent = s.options[s.selectedIndex] ? s.options[s.selectedIndex].text : s.value; }
+  function options() { return { rasterScaleCap: Number($("cap").value) || 3, groupsAs: $("groupsAs").value, compMode: $("compMode").value }; }
+  ["cap", "groupsAs", "compMode"].forEach(function (id) {
+    $(id).addEventListener("change", function () { syncField(id); post({ type: "save-options", options: options() }); });
+  });
+  function applyOptions(o) {
+    var cap = String(Math.max(1, Math.min(4, Math.round(Number(o.rasterScaleCap) || 3))));
+    $("cap").value = cap; $("groupsAs").value = o.groupsAs || "precomp"; $("compMode").value = o.compMode || "new";
+    ["cap", "groupsAs", "compMode"].forEach(syncField);
+  }
+
+  function toBase64(bytes) {
+    var s = "", CH = 0x8000;
+    for (var i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+    return btoa(s);
+  }
+
+  function startExport() {
+    if (ui.state === "exporting") return;
+    if (!ui.selection.count) { setState("waiting"); return; }
+    setState("exporting");
+    post({ type: "export", options: options() });
+  }
+  $("send").onclick = startExport;
+  $("retry").onclick = function () { if (ui.selection.count) startExport(); else setState("waiting"); };
+  $("mark").onclick = function () { post({ type: "mark-raster" }); };
+  // Click on the badge = check the connection now (with a visible "checking" pulse).
+  // Repeated clicks while AE is offline (within throttleMs) or while a check is running do not send more requests:
+  // they point at the alert instead, and one trailing check runs when the window ends.
+  function manualCheck() {
+    ui.lastManual = Date.now(); ui.manualPending = true;
+    var badge = $("status"), started = Date.now();
+    badge.classList.add("checking"); badge.setAttribute("aria-busy", "true");
+    $("statusText").textContent = ui.connected ? "Connected" : "Checking...";
+    return ping().then(function (ok) {
+      setConnected(ok);
+      log(ok ? "Bridge is reachable at " + base : "No bridge on port " + PORT + ". Open Window > Extensions > Uiscore Bridge in After Effects.", ok ? "ok" : "err");
+      setTimeout(function () { if (!ui.checking) { badge.classList.remove("checking"); badge.removeAttribute("aria-busy"); } }, Math.max(0, 400 - (Date.now() - started)));
+      return ok;
+    });
+  }
+  function focusAlert() {
+    if (ui.connected || !ui.pinged) return;
+    ui.alertClosed = false; setLayout();
+    var a = $("alert");
+    a.scrollIntoView({ block: "nearest", behavior: reduceMotion() ? "auto" : "smooth" });
+    a.focus({ preventScroll: true });
+    restartClass(a, "attention");
+    clearTimeout(focusAlert.t); focusAlert.t = setTimeout(function () { a.classList.remove("attention"); }, 1200);
+  }
+  function onBadgeClick() {
+    var since = Date.now() - ui.lastManual;
+    if (ui.checking || (!ui.connected && since < ui.throttleMs)) {
+      ui.manualPending = true;
+      focusAlert();
+      if (!ui.trailing && !ui.checking) ui.trailing = setTimeout(function () { ui.trailing = 0; if (!ui.connected) manualCheck(); }, Math.max(0, ui.throttleMs - since));
+      return;
+    }
+    manualCheck();
+  }
+  $("status").onclick = onBadgeClick;
+  $("alertClose").onclick = function () { ui.alertClosed = true; setLayout(); };
+
+  async function upload(job, images) {
+    var payload = { job: job, images: {} };
+    var bytesTotal = 0;
+    images.forEach(function (im) { var b = new Uint8Array(im.bytes); bytesTotal += b.length; payload.images[im.id] = toBase64(b); });
+    log("Serialized " + job.comps.length + " frame(s), " + images.length + " image(s), " + Math.round(bytesTotal / 1024) + " KB");
+    (job.warnings || []).slice(0, 20).forEach(function (w) { log("⚠ " + (w.name ? w.name + ": " : "") + w.message, "warn"); });
+    if (!ui.connected && !(await ping())) {
+      var msg = "After Effects is not reachable. Open Window > Extensions > Uiscore Bridge in After Effects and try again.";
+      log(msg, "err"); setState("error", msg); return;
+    }
+    // text/plain keeps this a CORS "simple request" (no preflight); the bridge parses JSON regardless.
+    var r = await fetch(base + "/import", { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(payload) });
+    var res = await r.json().catch(function () { return { ok: false, error: "Bad response " + r.status }; });
+    if (res.ok) {
+      log("Imported into After Effects: " + (res.summary || "done") + (res.jobDir ? "\n  " + res.jobDir : ""), "ok");
+      (res.warnings || []).slice(0, 30).forEach(function (w) { log("AE ⚠ " + w, "warn"); });
+      var n = (res.warnings || []).length;
+      post({ type: "notify", text: "Sent to After Effects" + (res.summary ? ": " + res.summary : "") + (n ? " · " + n + " warning(s)" : "") });
+      setState("success");
+    } else {
+      var err = "After Effects import failed: " + (res.error || r.status);
+      log(err, "err");
+      post({ type: "notify", text: "After Effects import failed", error: true });
+      setState("error", err);
+    }
+  }
+
+  onmessage = function (event) {
+    var msg = event.data && event.data.pluginMessage; if (!msg) return;
+    if (msg.type === "options") { applyOptions(msg.options); }
+    else if (msg.type === "selection") { renderSelection(msg); }
+    else if (msg.type === "log") { log(msg.text, msg.level === "error" ? "err" : ""); }
+    else if (msg.type === "export-error") { log(msg.text, "err"); setState("error", String(msg.text).split("\n")[0]); }
+    else if (msg.type === "job") { upload(msg.job, msg.images).catch(function (e) { var m = "Upload error: " + e; log(m, "err"); setState("error", m); }); }
+  };
+
+  // test/screenshot hook (no effect inside Figma)
+  window.__ub = { setState: setState, setConnected: setConnected, renderSelection: renderSelection, applyOptions: applyOptions, openMenu: openMenu, closeMenu: closeMenu, ping: ping, ui: ui };
+
+  setState("waiting");
+  post({ type: "init" });
+  ping(); setInterval(function () { if (!ui.checking) ping(); }, 4000);
+</script>
+</body>
+</html>

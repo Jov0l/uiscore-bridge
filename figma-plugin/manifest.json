@@ -1,0 +1,22 @@
+{
+  "name": "Uiscore Bridge",
+  "id": "uiscore-bridge-dev",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": [
+    "figma"
+  ],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "http://localhost:7341",
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com"
+    ],
+    "devAllowedDomains": [
+      "http://localhost:7341"
+    ],
+    "reasoning": "Uiscore Bridge sends the exported layer data and PNGs only to the Uiscore Bridge panel running inside After Effects on the same computer (local HTTP server on port 7341). No data leaves the machine. fonts.googleapis.com / fonts.gstatic.com only serve the Plus Jakarta Sans UI font."
+  }
+}

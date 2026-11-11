@@ -1,0 +1,47 @@
+[
+  {
+    "title": "Linear L→R, 3 stops",
+    "nativeDelta": 0,
+    "rampDelta": 23.5
+  },
+  {
+    "title": "Linear diagonal on layer rotated 30°",
+    "nativeDelta": 0,
+    "rampDelta": 0
+  },
+  {
+    "title": "Linear, layer scaled 1.6×0.6 + rotated −20°",
+    "nativeDelta": 0,
+    "rampDelta": 49.58
+  },
+  {
+    "title": "Linear with alpha stops (fade)",
+    "nativeDelta": 0,
+    "rampDelta": 34.6
+  },
+  {
+    "title": "Unsorted stops input (ordering)",
+    "nativeDelta": 0,
+    "rampDelta": 52.98
+  },
+  {
+    "title": "8 stops (rainbow)",
+    "nativeDelta": 0,
+    "rampDelta": 123
+  },
+  {
+    "title": "Radial, circular",
+    "nativeDelta": 0,
+    "rampDelta": 28.4
+  },
+  {
+    "title": "Radial off-centre highlight",
+    "nativeDelta": 0,
+    "rampDelta": 0
+  },
+  {
+    "title": "Radial elliptical (LIMITATION: AE is circular)",
+    "nativeDelta": 23.55,
+    "rampDelta": 72.57
+  }
+]

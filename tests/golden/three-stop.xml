@@ -1,0 +1,135 @@
+<?xml version='1.0'?>
+<prop.map version='4'>
+<prop.list>
+<prop.pair>
+<key>Gradient Color Data</key>
+<prop.list>
+<prop.pair>
+<key>Alpha Stops</key>
+<prop.list>
+<prop.pair>
+<key>Stops List</key>
+<prop.list>
+<prop.pair>
+<key>Stop-0</key>
+<prop.list>
+<prop.pair>
+<key>Stops Alpha</key>
+<array>
+<array.type><float/></array.type>
+<float>0</float>
+<float>0.5</float>
+<float>1</float>
+</array>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Stop-1</key>
+<prop.list>
+<prop.pair>
+<key>Stops Alpha</key>
+<array>
+<array.type><float/></array.type>
+<float>0.25</float>
+<float>0.5</float>
+<float>0.5</float>
+</array>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Stop-2</key>
+<prop.list>
+<prop.pair>
+<key>Stops Alpha</key>
+<array>
+<array.type><float/></array.type>
+<float>1</float>
+<float>0.5</float>
+<float>1</float>
+</array>
+</prop.pair>
+</prop.list>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Stops Size</key>
+<int type='unsigned' size='32'>3</int>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Color Stops</key>
+<prop.list>
+<prop.pair>
+<key>Stops List</key>
+<prop.list>
+<prop.pair>
+<key>Stop-0</key>
+<prop.list>
+<prop.pair>
+<key>Stops Color</key>
+<array>
+<array.type><float/></array.type>
+<float>0</float>
+<float>0.5</float>
+<float>1</float>
+<float>0</float>
+<float>0</float>
+<float>1</float>
+</array>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Stop-1</key>
+<prop.list>
+<prop.pair>
+<key>Stops Color</key>
+<array>
+<array.type><float/></array.type>
+<float>0.25</float>
+<float>0.5</float>
+<float>0</float>
+<float>1</float>
+<float>0</float>
+<float>1</float>
+</array>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Stop-2</key>
+<prop.list>
+<prop.pair>
+<key>Stops Color</key>
+<array>
+<array.type><float/></array.type>
+<float>1</float>
+<float>0.5</float>
+<float>0</float>
+<float>0</float>
+<float>1</float>
+<float>1</float>
+</array>
+</prop.pair>
+</prop.list>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Stops Size</key>
+<int type='unsigned' size='32'>3</int>
+</prop.pair>
+</prop.list>
+</prop.pair>
+</prop.list>
+</prop.pair>
+<prop.pair>
+<key>Gradient Colors</key>
+<string>1.0</string>
+</prop.pair>
+</prop.list>
+</prop.map>

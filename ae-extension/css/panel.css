@@ -1,0 +1,28 @@
+/* Uiscore Bridge AE panel - same visual language as the Figma plugin UI (Core DS tokens), kept dark to sit inside After Effects. */
+:root {
+  --backround-default-bg: #1e1e20; --backround-default-bg-hover: #2a2a2d; --backround-default-bg-pressed: #333337;
+  --border-default-border-default: #3a3a3f;
+  --text-default-txt-default: #f4f4f5; --text-default-txt-subtle: #c4c4cc; --text-default-txt-muted: #8e8e98;
+  --text-error-text-default: #ff3347; --text-success-text-default: #32b332;
+  --icon-error-icon-default: #ff3347; --icon-success-icon-default: #32b332;
+  --radius-6: 6px; --radius-full: 999px;
+  --font-family-body: "Plus Jakarta Sans", Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --button-neutral-shadow: 0 1px 2px 0 rgba(0,0,0,.24), 0 0 0 1px rgba(255,255,255,.08);
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 12px; background: var(--backround-default-bg); color: var(--text-default-txt-subtle); font: 12px/1.6 var(--font-family-body); -webkit-font-smoothing: antialiased; }
+.head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.logo { flex-shrink: 0; }
+h1 { flex: 1; font-size: 14px; font-weight: 500; line-height: 20px; margin: 0; color: var(--text-default-txt-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status { display: flex; align-items: center; gap: 2px; padding: 0 4px 0 2px; border-radius: var(--radius-full); font-weight: 500; line-height: 20px; white-space: nowrap; color: var(--text-default-txt-muted); }
+.dot { width: 8px; height: 8px; margin: 4px; border-radius: var(--radius-full); background: var(--text-default-txt-muted); }
+.dot.on { background: var(--icon-success-icon-default); } .dot.off { background: var(--icon-error-icon-default); }
+.status:has(.dot.on) { color: var(--text-success-text-default); } .status:has(.dot.off) { color: var(--text-error-text-default); }
+.meta { color: var(--text-default-txt-muted); font-size: 11px; margin-bottom: 12px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+button { background: var(--backround-default-bg-hover); color: var(--text-default-txt-default); border: 0; border-radius: var(--radius-6); padding: 6px 10px; box-shadow: var(--button-neutral-shadow);
+         font: 500 12px/20px var(--font-family-body); cursor: pointer; }
+button:hover { background: var(--backround-default-bg-pressed); }
+#log { height: calc(100vh - 150px); min-height: 120px; overflow: auto; background: #141416; border: 1px solid var(--border-default-border-default); border-radius: 8px; padding: 8px;
+       font: 11px/1.45 Consolas, Menlo, monospace; white-space: pre-wrap; }
+.warn { color: #e0a64b; } .err { color: var(--text-error-text-default); } .ok { color: var(--text-success-text-default); }

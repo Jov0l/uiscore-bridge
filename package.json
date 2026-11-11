@@ -1,0 +1,20 @@
+{
+  "name": "uiscore-bridge",
+  "version": "0.1.0",
+  "description": "Uiscore Bridge: Figma -> After Effects",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node scripts/build.js && node --test \"tests/*.test.js\"",
+    "visual": "node tools/render-gradients.js",
+    "package": "bash scripts/package-zxp.sh",
+    "example": "node tools/make-example.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "devDependencies": {
+    "acorn": "^8.19.0"
+  },
+  "private": true
+}

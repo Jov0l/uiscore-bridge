@@ -174,10 +174,28 @@ test("masks, clipsContent, components and instances", async () => {
   assert.equal(mg.children[0].isMask, true); assert.equal(mg.children[0].maskType, "ALPHA");
 });
 
-test("effects: drop shadow mapped to AE units; spread warns", async () => {
+test("effects: drop shadow mapped to AE units; spread exported for the builder (no serializer warning)", async () => {
   const n = S.node("RECTANGLE", { name: "s", width: 10, height: 10, effects: [{ type: "DROP_SHADOW", visible: true, color: { r: 0, g: 0, b: 0, a: 0.5 }, offset: { x: 3, y: 4 }, radius: 10, spread: 2 }] });
   const { job } = await run([S.finalize(S.node("FRAME", { name: "F", width: 50, height: 50 }, [n]))]);
   const e = job.comps[0].root.children[0].effects[0];
   assert.equal(e.type, "dropShadow"); close(e.distance, 5); close(e.opacity, 0.5);
-  assert.ok(job.warnings.some((w) => /spread/.test(w.message)));
+  assert.equal(e.spread, 2);
+  assert.ok(!job.warnings.some((w) => /spread/.test(w.message)));
+});
+
+test("frame with IMAGE fill: children stay native, only the fill becomes a PNG (bgRaster)", async () => {
+  const kid = S.node("RECTANGLE", { name: "Kid", width: 20, height: 20, rel: [1, 0, 0, 1, 10, 10], fills: [S.solid(1, 0, 0)] });
+  const img = { type: "IMAGE", visible: true, opacity: 1, blendMode: "NORMAL", scaleMode: "FILL", imageHash: "h1" };
+  const frame = S.finalize(S.node("FRAME", { name: "Photo frame", width: 200, height: 100, rel: [1, 0, 0, 1, 50, 60], cornerRadius: 12, fills: [S.solid(0, 0, 0), img] }, [kid]));
+  const before = S.created.length;
+  const { job, images } = await run([frame]);
+  const root = job.comps[0].root;
+  assert.equal(root.type, "frame");
+  assert.equal(root.children.length, 1); assert.equal(root.children[0].type, "rect");
+  assert.equal(root.bgRaster.reason, "imageFill"); assert.ok(!root.bgRaster.failed);
+  assert.deepEqual(root.bgRaster.transform.local.position, [0, 0]);
+  assert.equal(images.length, 1); assert.equal(images[0].id, root.bgRaster.asset);
+  const tmp = S.created.slice(before);
+  assert.equal(tmp.length, 1); assert.equal(tmp[0].removed, true, "temp rectangle removed");
+  assert.equal(tmp[0].fills.length, 1); assert.equal(tmp[0].fills[0].type, "IMAGE"); assert.equal(tmp[0].cornerRadius, 12);
 });

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionList>
+  <Extension Id="com.uiscore.bridge.panel">
+    <HostList>
+      <!-- Chrome DevTools for the panel: http://localhost:8099 -->
+      <Host Name="AEFT" Port="8099"/>
+    </HostList>
+  </Extension>
+</ExtensionList>

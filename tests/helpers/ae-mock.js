@@ -32,8 +32,24 @@ function createAE(opts) {
       const c = new Prop(k, this); this.children.push(c); return c;
     }
     remove() { const a = this.parentProperty.children; a.splice(a.indexOf(this), 1); }
-    setValue(v) { if (this.matchName === "ADBE Vector Grad Colors") throw new Error("Can't set value of a NO_VALUE property"); this._value = v; }
+    setValue(v) { if (this.matchName === "ADBE Vector Grad Colors") throw new Error("Can't set value of a NO_VALUE property"); if (this._keys && this._keys.length) throw new Error("setValue on a keyframed property"); this._value = v; }
     get value() { return this._value; }
+    // keyframes (times in comp time, like AE) + expressions
+    get numKeys() { return this._keys ? this._keys.length : 0; }
+    setValueAtTime(t, v) { this._keys = this._keys || []; const k = this._keys.find((x) => x.t === t); if (k) k.v = v; else { this._keys.push({ t, v }); this._keys.sort((a, b) => a.t - b.t); } }
+    keyTime(k) { return this._keys[k - 1].t; }
+    keyValue(k) { return this._keys[k - 1].v; }
+    setValueAtKey(k, v) { this._keys[k - 1].v = v; }
+    get expression() { return this._expr || ""; }
+    set expression(e) { this._expr = e; this.expressionEnabled = !!e; }
+    _clone(parent) {
+      const c = new Prop(this.matchName, parent); c.name = this.name; c._value = this._value; c.enabled = this.enabled;
+      if (this._keys) c._keys = this._keys.map((k) => Object.assign({}, k));
+      if (this._expr) { c._expr = this._expr; c.expressionEnabled = this.expressionEnabled; }
+      if (this.dimensionsSeparated) c.dimensionsSeparated = true;
+      c.children = this.children.map((x) => x._clone(c));
+      return c;
+    }
   }
 
   class TextDocument {
@@ -45,8 +61,27 @@ function createAE(opts) {
   class Layer extends Prop {
     constructor(comp, kind, extra) {
       super("ADBE Layer");
-      Object.assign(this, { comp, kind, parent: null, blendingMode: "NORMAL", adjustmentLayer: false, collapseTransformation: false, comment: "", trackMatte: null }, extra || {});
+      Object.assign(this, { comp, kind, parent: null, blendingMode: "NORMAL", adjustmentLayer: false, collapseTransformation: false, comment: "", trackMatte: null,
+        _start: 0, inPoint: 0, outPoint: comp ? comp.duration : 10, stretch: 100, timeRemapEnabled: false, threeDLayer: false, label: 0 }, extra || {});
       this.id = nextId++;
+    }
+    // AE: changing startTime slides the layer (in/out points move with it)
+    get startTime() { return this._start; }
+    set startTime(t) { const d = t - this._start; this._start = t; this.inPoint += d; this.outPoint += d; }
+    setParentWithJump(p) { this._parent = p || null; }
+    get trackMatteLayer() { return this.trackMatte ? this.trackMatte.layer : null; }
+    get trackMatteType() { return this._tmType || (this.trackMatte ? this.trackMatte.type : "NONE"); }
+    set trackMatteType(t) { this._tmType = t; } // legacy (AE < 23) assignment
+    remove() {
+      const a = this.comp._layers; a.splice(a.indexOf(this), 1);
+      for (const l of a) if (l._parent === this) l._parent = null;
+    }
+    copyToComp(target) {
+      const c = new Layer(target, this.kind, { name: this.name, source: this.source, enabled: this.enabled, blendingMode: this.blendingMode, _start: this._start, inPoint: this.inPoint,
+        outPoint: this.outPoint, stretch: this.stretch, threeDLayer: this.threeDLayer, label: this.label, comment: this.comment, collapseTransformation: this.collapseTransformation });
+      c.children = this.children.map((x) => x._clone(c));
+      target._layers.unshift(c); log.copies = (log.copies || 0) + 1;
+      return c;
     }
     get index() { return this.comp._layers.indexOf(this) + 1; }
     set parent(p) { this._parent = p; }
@@ -69,7 +104,7 @@ function createAE(opts) {
   class FolderItem { constructor(name) { this.name = name; this.id = nextId++; this.parentFolder = null; } }
   class FootageItem { constructor(file) { this.file = file; this.name = path.basename(file.fsName); this.id = nextId++; this.parentFolder = null; } }
   class CompItem {
-    constructor(name, w, h, par, dur, fps) { Object.assign(this, { name, width: w, height: h, pixelAspect: par, duration: dur, frameRate: fps, bgColor: [0, 0, 0] }); this.id = nextId++; this._layers = []; this.parentFolder = null;
+    constructor(name, w, h, par, dur, fps) { if (w < 4 || w > 30000) throw new Error('After Effects error: Unable to call "addComp" because of parameter 2. Value ' + w + ' out of range 4 to 30000.'); if (h < 4 || h > 30000) throw new Error('After Effects error: Unable to call "addComp" because of parameter 3. Value ' + h + ' out of range 4 to 30000.'); Object.assign(this, { name, width: w, height: h, pixelAspect: par, duration: dur, frameRate: fps, bgColor: [0, 0, 0] }); this.id = nextId++; this._layers = []; this.parentFolder = null;
       const comp = this;
       const add = (kind, extra) => { const l = new Layer(comp, kind, extra); comp._layers.unshift(l); return l; };
       this.layers = {
@@ -77,9 +112,24 @@ function createAE(opts) {
         addText: (t) => { const l = add("text", { name: t }); l.property("ADBE Text Properties").property("ADBE Text Document")._value = new TextDocument(t); return l; },
         addBoxText: (size, t) => { const l = add("boxText", { name: t, boxSize: size }); const d = new TextDocument(t); d.boxTextPos = [0, 0]; l.property("ADBE Text Properties").property("ADBE Text Document")._value = d; return l; },
         addNull: () => add("null", { name: "Null" }),
-        add: (item) => add(item instanceof CompItem ? "precomp" : "footage", { name: item.name, source: item })
+        add: (item) => add(item instanceof CompItem ? "precomp" : "footage", { name: item.name, source: item }),
+        precompose: (indices, name, moveAll) => {
+          if (!moveAll && indices.length > 1) throw new Error("precompose: moveAllAttributes must be true for several layers");
+          const sel = indices.map((i) => comp._layers[i - 1]);
+          if (sel.some((l) => !l)) throw new Error("precompose: bad index");
+          const nc = new CompItem(name, comp.width, comp.height, comp.pixelAspect, comp.duration, comp.frameRate); items.push(nc);
+          const at = Math.min(...indices) - 1;
+          for (const l of sel) { comp._layers.splice(comp._layers.indexOf(l), 1); l.comp = nc; nc._layers.push(l); l.selected = false; }
+          for (const l of comp._layers) if (sel.includes(l._parent)) l._parent = null;
+          for (const l of sel) if (l._parent && !sel.includes(l._parent)) l._parent = null;
+          const pl = new Layer(comp, "precomp", { name, source: nc });
+          comp._layers.splice(at, 0, pl);
+          return nc;
+        }
       };
     }
+    get selectedLayers() { return this._layers.filter((l) => l.selected); }
+    get usedIn() { return items.filter((c) => c instanceof CompItem && c._layers.some((l) => l.source === this)); }
     get numLayers() { return this._layers.length; }
     layer(i) { return this._layers[i - 1]; }
     openInViewer() { project.activeItem = this; log.viewer.push(this.name); }

@@ -6,19 +6,63 @@
   <link rel="stylesheet" href="css/panel.css">
 </head>
 <body>
-  <header class="head">
-    <img class="logo" src="img/uiscore-logo.svg" width="16" height="16" alt="">
-    <h1>Uiscore Bridge</h1>
-    <div class="status"><span id="dot" class="dot"></span><span id="status">Starting…</span></div>
-  </header>
-  <div class="meta" id="meta"></div>
-  <div class="buttons">
-    <button id="restart">Restart server</button>
-    <button id="sample">Import sample job</button>
-    <button id="openJobs">Open jobs folder</button>
-    <button id="clear">Clear log</button>
+  <!-- Layout = Figma "Uiscore Bridge AE - dark" (node 2896:47300): accordions Groups / Managing / Audit Log, error alert, footer -->
+  <div id="app">
+    <section class="acc open" id="accGroups" data-acc="groups">
+      <button class="acc-head" type="button" aria-expanded="true" aria-controls="groupsBody">
+        <span class="acc-title txt-compact-medium-plus">Groups</span>
+        <span class="acc-icon"><img class="chev-closed" src="img/chevron-right.svg" width="16" height="16" alt=""><img class="chev-open" src="img/chevron-down.svg" width="16" height="16" alt=""></span>
+      </button>
+      <div class="acc-body row" id="groupsBody">
+        <button id="precomp" class="btn txt-compact-medium-plus" type="button" title="Precompose the selected layers of the active comp (all attributes move into the new comp)"><img src="img/precomp.svg" width="16" height="16" alt=""><span>Precomp</span></button>
+        <button id="decomp" class="btn txt-compact-medium-plus" type="button" title="Replace the selected precomp layer with its layers, keeping how they look (transform goes to a null)"><img src="img/decomp.svg" width="16" height="16" alt=""><span>Decomp</span></button>
+        <button id="toggle" class="btn txt-compact-medium-plus" type="button" title="Show / hide the selected layers (eye switch)"><img src="img/eye.svg" width="16" height="16" alt=""><span>Toggle</span></button>
+      </div>
+    </section>
+
+    <section class="acc open" id="accManaging" data-acc="managing">
+      <button class="acc-head" type="button" aria-expanded="true" aria-controls="managingBody">
+        <span class="acc-title txt-compact-medium-plus">Managing</span>
+        <span class="acc-icon"><img class="chev-closed" src="img/chevron-right.svg" width="16" height="16" alt=""><img class="chev-open" src="img/chevron-down.svg" width="16" height="16" alt=""></span>
+      </button>
+      <div class="acc-body row" id="managingBody">
+        <button id="restart" class="btn txt-compact-medium-plus" type="button" title="Restart the bridge server on port 7341"><img src="img/restart.svg" width="16" height="16" alt=""><span>Restart</span></button>
+        <button id="sample" class="btn txt-compact-medium-plus" type="button" title="Import the bundled sample job"><img src="img/plus.svg" width="16" height="16" alt=""><span>Import</span></button>
+        <button id="openJobs" class="btn txt-compact-medium-plus" type="button" title="Open the jobs folder"><span>Open Folder</span></button>
+      </div>
+    </section>
+
+    <section class="acc open acc-log" id="accLog" data-acc="log">
+      <button class="acc-head" type="button" aria-expanded="true" aria-controls="logBody">
+        <span class="acc-title txt-compact-medium-plus">Audit Log</span>
+        <span class="acc-icon"><img class="chev-closed" src="img/chevron-right.svg" width="16" height="16" alt=""><img class="chev-open" src="img/chevron-down.svg" width="16" height="16" alt=""></span>
+      </button>
+      <div class="acc-body code" id="logBody">
+        <div id="log" class="code-scroll" role="log" aria-live="polite"></div>
+        <img class="divider" src="img/divider.svg" width="412" height="1" alt="">
+        <button id="clear" class="code-action txt-compact-small-plus" type="button">Clear Log</button>
+      </div>
+    </section>
+
+    <!-- shown when an import / a layer tool / the server fails; hidden with the close button or after the next success -->
+    <section id="alertWrap" class="alert-wrap" hidden>
+      <div id="alert" class="alert" role="alert" aria-live="assertive">
+        <span class="info"><img src="img/alert-error.svg" width="16" height="16" alt=""></span>
+        <div class="content">
+          <div id="alertTitle" class="a-title txt-compact-medium-plus">Import failed</div>
+          <p id="alertDesc" class="a-desc txt-medium"></p>
+        </div>
+        <button id="alertClose" class="close" type="button" title="Hide" aria-label="Hide"><img src="img/crossmark.svg" width="16" height="16" alt=""></button>
+      </div>
+    </section>
+
+    <div class="spacer"></div>
+    <footer class="foot">
+      <span class="logo"><img class="logo-img" src="img/uiscore-logo.svg" width="16" height="16" alt="Uiscore"></span>
+      <span id="meta" class="version txt-compact-small-plus">Uiscore Bridge - v0.1.0</span>
+      <div id="badge" class="badge" title=""><span class="pt"><span id="dot" class="dot"></span></span><span id="status" class="t txt-compact-small-plus">Starting…</span></div>
+    </footer>
   </div>
-  <div id="log"></div>
   <script src="js/main.js"></script>
 </body>
 </html>

@@ -111,7 +111,7 @@ function createUBSerializer(figmaApi, G, userOptions) {
       if (e.type === "DROP_SHADOW" || e.type === "INNER_SHADOW") {
         var s = G.shadowToAE(e);
         out.push(Object.assign({ type: e.type === "DROP_SHADOW" ? "dropShadow" : "innerShadow", visible: visible, offset: [e.offset.x, e.offset.y], radius: e.radius || 0, colorRGBA: G.color(e.color), showBehindNode: e.showShadowBehindNode === true }, s));
-        if (s.spread) warn(node, "Shadow spread " + s.spread + " is not supported by AE Drop Shadow; ignored.");
+        // spread != 0: the AE builder draws it as its own blurred shape layer (shapes/frames) or warns (text/images/groups)
       } else if (e.type === "LAYER_BLUR" || e.type === "BACKGROUND_BLUR") {
         out.push({ type: e.type === "LAYER_BLUR" ? "layerBlur" : "backgroundBlur", visible: visible, radius: e.radius || 0, blurriness: G.blurToAE(e.radius) });
         if (e.blurType === "PROGRESSIVE") warn(node, "Progressive blur exported as uniform blur.");
@@ -216,9 +216,43 @@ function createUBSerializer(figmaApi, G, userOptions) {
   }
 
   // --------------------------------------------------------------- raster
+  function isFillContainer(node) {
+    return !!CONTAINERS[node.type] && node.type !== "BOOLEAN_OPERATION" && node.type !== "GROUP";
+  }
+
+  /*
+   * Export only the image paints of a container (frame / component / instance) as PNG:
+   * a temporary rectangle with the same size, transform and corner radii, removed in `finally`.
+   */
+  async function exportImageFill(node, cap) {
+    var rect = figmaApi.createRectangle();
+    try {
+      rect.name = "uiscore-bridge-tmp";
+      rect.resize(Math.max(0.01, node.width || 0), Math.max(0.01, node.height || 0));
+      rect.relativeTransform = node.absoluteTransform;
+      var paints = [];
+      for (var i = 0; i < node.fills.length; i++) if (node.fills[i].type === "IMAGE" || node.fills[i].type === "VIDEO") paints.push(node.fills[i]);
+      rect.fills = paints;
+      rect.strokes = [];
+      if (node.cornerRadius !== undefined && node.cornerRadius !== figmaApi.mixed) rect.cornerRadius = node.cornerRadius;
+      else if (node.topLeftRadius !== undefined) {
+        rect.topLeftRadius = node.topLeftRadius; rect.topRightRadius = node.topRightRadius;
+        rect.bottomRightRadius = node.bottomRightRadius; rect.bottomLeftRadius = node.bottomLeftRadius;
+      }
+      if (node.cornerSmoothing) rect.cornerSmoothing = node.cornerSmoothing;
+      var rb = rect.absoluteRenderBounds || rect.absoluteBoundingBox || { x: 0, y: 0, width: rect.width, height: rect.height };
+      var scale = G.exportScale(rb.width, rb.height, cap);
+      var bytes = await rect.exportAsync({ format: "PNG", constraint: { type: "SCALE", value: scale } });
+      return { bytes: bytes, bounds: { x: rb.x, y: rb.y, width: rb.width, height: rb.height }, scale: scale };
+    } finally {
+      try { rect.remove(); } catch (e) {}
+    }
+  }
+
   function shouldRaster(node) {
     if (node.name && node.name.charAt(0) === "*") return "marked";
-    if (hasImagePaint(node.fills)) return "imageFill";
+    // Containers keep their children editable: only their image fill becomes a PNG (see bgRaster).
+    if (hasImagePaint(node.fills) && !isFillContainer(node)) return "imageFill";
     if (!TYPE_MAP[node.type]) return "unsupportedType";
     return null;
   }
@@ -314,6 +348,12 @@ function createUBSerializer(figmaApi, G, userOptions) {
       return out;
     }
 
+    if (isFillContainer(node) && hasImagePaint(node.fills)) {
+      var bgAsset = "img_" + (++imageCounter);
+      out.bgRaster = { asset: bgAsset, reason: "imageFill" };
+      rasterTasks.push({ node: node, out: out, ctx: { rootAbs: abs, parentAbs: abs }, assetId: bgAsset, bg: true });
+    }
+
     if (type === "text") out.text = await serializeText(node, w, h, comp);
     var geom = geometryFor(node, type);
     if (geom) out.geometry = geom;
@@ -333,19 +373,21 @@ function createUBSerializer(figmaApi, G, userOptions) {
     for (var i = 0; i < rasterTasks.length; i++) {
       var t = rasterTasks[i];
       try {
-        var r = await exportRaster(t.node, opts.rasterScaleCap);
+        var r = t.bg ? await exportImageFill(t.node, opts.rasterScaleCap) : await exportRaster(t.node, opts.rasterScaleCap);
         // Image placement: PNG pixel grid scaled by 1/scale, top-left at the absolute render bounds.
         var imgAbs = [1 / r.scale, 0, 0, 1 / r.scale, r.bounds.x, r.bounds.y];
         var local = G.relativeTo(t.ctx.parentAbs, imgAbs);
         var comp = G.relativeTo(t.ctx.rootAbs, imgAbs);
-        t.out.transform = { local: G.decompose(local), comp: G.decompose(comp), matrixLocal: local, matrixComp: comp, rasterPlacement: true };
-        t.out.raster.scale = r.scale;
-        t.out.raster.pixelSize = { w: Math.round(r.bounds.width * r.scale), h: Math.round(r.bounds.height * r.scale) };
-        t.out.raster.bounds = { x: G.round(r.bounds.x), y: G.round(r.bounds.y), w: G.round(r.bounds.width), h: G.round(r.bounds.height) };
+        var rec = t.bg ? t.out.bgRaster : t.out.raster;
+        if (t.bg) rec.transform = { local: G.decompose(local), matrixLocal: local, rasterPlacement: true };
+        else t.out.transform = { local: G.decompose(local), comp: G.decompose(comp), matrixLocal: local, matrixComp: comp, rasterPlacement: true };
+        rec.scale = r.scale;
+        rec.pixelSize = { w: Math.round(r.bounds.width * r.scale), h: Math.round(r.bounds.height * r.scale) };
+        rec.bounds = { x: G.round(r.bounds.x), y: G.round(r.bounds.y), w: G.round(r.bounds.width), h: G.round(r.bounds.height) };
         images.push({ id: t.assetId, bytes: r.bytes, nodeId: t.node.id });
       } catch (err) {
         warn(t.node, "PNG export failed: " + (err && err.message ? err.message : err));
-        t.out.raster.failed = true;
+        (t.bg ? t.out.bgRaster : t.out.raster).failed = true;
       }
     }
   }

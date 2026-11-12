@@ -12,12 +12,13 @@ function findChrome() {
   }) || null;
 }
 
-async function launch(chrome) {
+async function launch(chrome, opts) {
+  opts = opts || {};
   chrome = chrome || findChrome();
   if (!chrome) throw new Error("No Chrome/Chromium found (set CHROME=...)");
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "ub-cdp-"));
-  const proc = spawn(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--no-first-run",
-    "--remote-debugging-port=0", "--allow-file-access-from-files", `--user-data-dir=${profile}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
+  const proc = spawn(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu"].concat(opts.scrollbars ? [] : ["--hide-scrollbars"], ["--no-first-run",
+    "--remote-debugging-port=0", "--allow-file-access-from-files", `--user-data-dir=${profile}`, "about:blank"]), { stdio: ["ignore", "ignore", "pipe"] });
   const wsUrl = await new Promise((resolve, reject) => {
     let buf = "";
     const t = setTimeout(() => reject(new Error("Chrome did not start")), 30000);

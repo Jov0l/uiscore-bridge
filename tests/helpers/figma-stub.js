@@ -69,4 +69,16 @@ function textNode(props) {
   }, props, { segments: undefined }));
 }
 
-module.exports = { MIXED, figmaApi: { mixed: MIXED }, node, finalize, rot, solid, stop, gradient, textNode, toFigmaT, seg: null };
+const created = [];
+function createRectangle() {
+  const r = node("RECTANGLE", { width: 100, height: 100 });
+  r.removed = false;
+  r.resize = (w, h) => { r.width = w; r.height = h; };
+  r.remove = () => { r.removed = true; };
+  Object.defineProperty(r, "relativeTransform", { set: (t) => { if (Array.isArray(t[0])) { r.rel = [t[0][0], t[1][0], t[0][1], t[1][1], t[0][2], t[1][2]]; if (!r._fin) { r._fin = true; finalize(r); r._fin = false; } } }, get: () => toFigmaT(r.rel), configurable: true });
+  r._fin = true; finalize(r); r._fin = false;
+  created.push(r);
+  return r;
+}
+
+module.exports = { MIXED, created, figmaApi: { mixed: MIXED, createRectangle }, node, finalize, rot, solid, stop, gradient, textNode, toFigmaT, seg: null };

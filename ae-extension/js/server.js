@@ -129,7 +129,7 @@ function readBody(req, limit) {
 
 /**
  * opts: { port, host, geom, templatesDir, getAeVersion(), resolveJobsRoot(): Promise<string>,
- *         evalScript(script): Promise<string>, log(level, msg), version }
+ *         evalScript(script): Promise<string>, log(level, msg), version, onPing() (optional, called on every GET /ping) }
  */
 function createBridge(opts) {
   const log = opts.log || (() => {});
@@ -170,6 +170,7 @@ function createBridge(opts) {
     const url = (req.url || "/").split("?")[0];
     if (req.method === "OPTIONS") { res.writeHead(204, corsHeaders(req)); return res.end(); }
     if (req.method === "GET" && url === "/ping") {
+      if (opts.onPing) { try { opts.onPing(); } catch (e) {} }
       return sendJson(req, res, 200, { ok: true, app: "uiscore-bridge", version: opts.version || "0.1.0", schema: opts.geom.SCHEMA_ID, schemaVersion: opts.geom.SCHEMA_VERSION, host: { app: "AEFT", version: opts.getAeVersion ? opts.getAeVersion() : null } });
     }
     if (req.method === "POST" && url === "/import") {

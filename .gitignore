@@ -1,0 +1,8 @@
+node_modules/
+*.p12
+*.zxp
+.rnd
+ZXPSignCmd*
+dist/
+.DS_Store
+Thumbs.db

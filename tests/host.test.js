@@ -77,10 +77,11 @@ test("builder (mock AE): full sample imports without errors, every gradient nati
   assert.equal(ae.app._undo, 0, "undo group closed");
   // Layer order: Figma bottom->top == AE bottom->top
   const names = main._layers.map((l) => l.name).reverse();
-  assert.deepEqual(names.slice(0, 4), ["Card / Weekly bg", "Background", "Hero gradient", "Rotated badge"]);
+  // "Rotated badge" has 2 fills -> one layer per fill (bottom fill = "fill 1"), the stroke rides on the top one
+  assert.deepEqual(names.slice(0, 5), ["Card / Weekly bg", "Background", "Hero gradient", "Rotated badge fill 1", "Rotated badge fill 2"]);
   assert.equal(names[names.length - 1], "*Noise texture");
   // rotation + position applied
-  const badge = main._layers.find((l) => l.name === "Rotated badge");
+  const badge = main._layers.find((l) => l.name === "Rotated badge fill 2"); // top fill layer carries the stroke
   const tr = badge.property("ADBE Transform Group");
   assert.deepEqual(plain(tr.property("ADBE Position").value), [250, 40]);
   assert.ok(Math.abs(tr.property("ADBE Rotate Z").value + 12) < 1e-3);
@@ -183,4 +184,50 @@ test("builder: reports errors as ok:false JSON instead of throwing", () => {
   const ae = createAE({});
   const res = JSON.parse(ae.run(`UiscoreBridge.importJob("/definitely/missing/job.json")`));
   assert.equal(res.ok, false); assert.match(res.error, /Cannot open|missing/);
+});
+
+test("builder: tiny auto-layout frames (2x0) still become comps (AE min comp size is 4)", async () => {
+  let touched = 0;
+  const w = await jobOnDisk({}, (p) => {
+    const walk = (n) => { (n.children || []).forEach(walk); if (n.type === "frame") { n.size = { w: 2, h: 0 }; touched++; n.autolayout = { mode: "HORIZONTAL", itemSpacing: 8, padding: [0, 0, 0, 0], primaryAlign: "MIN", counterAlign: "MIN", wrap: "NO_WRAP" }; } };
+    p.job.comps.forEach((c) => (c.root.children || []).forEach(walk));
+  });
+  const { res } = importInMock(w.jobFile);
+  assert.equal(res.ok, true, res.error);
+  assert.ok(touched > 0, "fixture has nested frames");
+});
+
+test("builder: root frame with IMAGE fill -> bg shape + image layer + native children", async () => {
+  const kid = S.node("RECTANGLE", { name: "Kid", width: 20, height: 20, rel: [1, 0, 0, 1, 10, 10], fills: [S.solid(1, 0, 0)] });
+  const img = { type: "IMAGE", visible: true, opacity: 1, blendMode: "NORMAL", scaleMode: "FILL", imageHash: "h1" };
+  const frame = S.finalize(S.node("FRAME", { name: "Photo frame", width: 200, height: 100, fills: [S.solid(0, 0, 0), img] }, [kid]));
+  const { job, images } = await createUBSerializer(S.figmaApi, G, {}).serialize([frame], { jobId: "img-bg" });
+  const payload = { job, images: {} };
+  images.forEach((i) => { payload.images[i.id] = Buffer.from(i.bytes).toString("base64"); });
+  const w = writeJobFolder(payload, { geom: G, jobsRoot: fs.mkdtempSync(path.join(os.tmpdir(), "ub-host-")), aeVersion: "26.3", templatesDir: TPL });
+  const ae = createAE();
+  const res = JSON.parse(ae.run(`UiscoreBridge.importJob(${JSON.stringify(w.jobFile)})`));
+  assert.equal(res.ok, true, res.error);
+  const main = ae.items.find((i) => i instanceof ae.CompItem && i.name === "Photo frame");
+  const names = main._layers.map((l) => l.name);
+  assert.ok(names.includes("Photo frame image"), names.join(", "));
+  assert.ok(names.includes("Kid"), names.join(", "));
+  assert.ok(!res.warnings.some((x) => /Image fill/.test(x.message || x)), JSON.stringify(res.warnings));
+});
+
+test("builder: inner shadow works on localized AE (menu name not found -> command id 9001)", async () => {
+  for (const noMenu of [false, true]) {
+    const r = S.finalize(S.node("RECTANGLE", { name: "Pill", width: 80, height: 30, fills: [S.solid(0.2, 0.2, 0.2)],
+      effects: [{ type: "INNER_SHADOW", visible: true, color: { r: 0, g: 0, b: 0, a: 0.4 }, offset: { x: 0, y: 2 }, radius: 4, spread: 0, blendMode: "NORMAL" }] }));
+    const frame = S.finalize(S.node("FRAME", { name: "IS frame", width: 120, height: 60, fills: [S.solid(1, 1, 1)] }, [r]));
+    const { job, images } = await createUBSerializer(S.figmaApi, G, {}).serialize([frame], { jobId: "is" });
+    const payload = { job, images: {} };
+    images.forEach((i) => { payload.images[i.id] = Buffer.from(i.bytes).toString("base64"); });
+    const w = writeJobFolder(payload, { geom: G, jobsRoot: fs.mkdtempSync(path.join(os.tmpdir(), "ub-host-")), aeVersion: "26.3", templatesDir: TPL });
+    const ae = createAE({ noMenu });
+    const res = JSON.parse(ae.run(`UiscoreBridge.importJob(${JSON.stringify(w.jobFile)})`));
+    assert.equal(res.ok, true, res.error);
+    assert.ok(ae.log.commands.includes(9001), "inner shadow command executed (noMenu=" + noMenu + ")");
+    assert.ok(!res.warnings.some((x) => /Inner shadow skipped|not created/.test(x.message || x)), JSON.stringify(res.warnings));
+  }
 });
